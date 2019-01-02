@@ -69,6 +69,7 @@ $VERSION = '3.64';
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::CiscoVTP::MIBS,
     'CISCO-EIGRP-MIB' => 'cEigrpAsRouterId',
+    'CISCO-VRF-MIB'   => 'cvVrfName',
 );
 
 %GLOBALS = (
@@ -100,6 +101,10 @@ $VERSION = '3.64';
     # CISCO-EIGRP-MIB::cEigrpPeerTable
     'c_eigrp_peer_types' => 'cEigrpPeerAddrType',
     'c_eigrp_peers'      => 'cEigrpPeerAddr',
+
+    # CISCO-VRF-MIB::cvVrfEntry
+    'c_vrf_name' => 'cvVrfName',
+    'c_vrf_up'   => 'cvVrfOperStatus',
 
 );
 
@@ -173,6 +178,54 @@ sub eigrp_peers {
     return \%eigrp_peers;
 }
 
+sub cisco_vrf_name {
+    my $cisco = shift;
+
+    my $names = $cisco->c_vrf_name() || {};
+
+    my %vrflist;
+    foreach my $idx ( keys %$names ) {
+        my $name = $names->{$idx};
+        next unless $name;
+
+        $vrflist{$idx} = $name;
+    }
+    return \%vrflist;
+}
+
+sub cisco_vrf_up {
+    my $cisco = shift;
+
+    my $up    = $cisco->c_vrf_up()   || {};
+
+    my %vrflist;
+    foreach my $idx ( keys %$up ) {
+        my $state = $up->{$idx};
+        next unless $state;
+
+        $vrflist{$idx} = $state;
+
+    }
+    return \%vrflist;
+}
+
+sub cisco_vrf_index {
+    my $cisco = shift;
+
+    my $up    = $cisco->c_vrf_up()   || {};
+
+    my %vrflist;
+    foreach my $idx ( keys %$up ) {
+        my $state = $up->{$idx};
+        next unless $state;
+
+        $vrflist{$idx} = $idx;
+
+    }
+    return \%vrflist;
+}
+
+
 1;
 __END__
 
@@ -239,6 +292,8 @@ for other device specific L3 Cisco classes.
 =over
 
 =item F<CISCO-EIGRP-MIB>
+
+=item F<CISCO-VRF-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -337,6 +392,19 @@ Returns EIGRP peer IP addresses
 =item $cisco->i_vlan()
 
 Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
+=item $cisco->cisco_vrf_index()
+
+Returns a mapping to the vrf index.
+
+=item $cisco->cisco_vrf_name()
+
+Returns a mapping between C<cvVrfName> and the vrf index.
+
+=item $cisco->cisco_vrf_up()
+
+Returns a mapping between C<cvVrfOperStatus> and the vrf index.
+
 
 =back
 
