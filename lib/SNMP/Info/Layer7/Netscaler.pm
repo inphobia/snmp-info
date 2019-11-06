@@ -160,7 +160,8 @@ sub os {
 
 sub serial {
     my $ns    = shift;
-    return $ns->sn_serial() || '';
+
+    return $ns->ns_serial() || '';
 }
 
 sub model {
