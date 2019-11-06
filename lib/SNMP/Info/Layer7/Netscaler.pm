@@ -36,7 +36,7 @@ use SNMP::Info::LLDP;
 use SNMP::Info::Layer7;
 
 @SNMP::Info::Layer7::Netscaler::ISA       = qw/
-    use SNMP::Info::LLDP;
+    SNMP::Info::LLDP
     SNMP::Info::Layer7
     Exporter
 /;
