@@ -55,16 +55,12 @@ $VERSION = '3.70';
 %GLOBALS = (
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::Layer7::GLOBALS,
-    'sys_hw_sn'   => 'sysHardwareSerialNumber',
-    'cpu'         => 'resCpuUsage',
-
     'ns_build_ver'    => 'sysBuildVersion',
     'ns_sys_hw_desc'  => 'sysHardwareVersionDesc',
-    'ns_cpu'          => 'resCpuUsage',
     'ns_serial'       => 'sysHardwareSerialNumber',
     'ns_model_id'     => 'sysModelId',
     # these will only work if lldp is running
-    'mac'             => 'lldpLocChassisId',
+#    'mac'             => 'lldpLocChassisId',
     'lldp_sysname'    => 'lldpLocSysName',
     'lldp_sysdesc'    => 'NS-ROOT-MIB::lldpLocSysDesc',
     'lldp_sys_cap'    => 'lldpLocSysCapEnabled',
@@ -196,7 +192,6 @@ sub os_ver {
 
     # citrix refers to their build id's ala "NetScaler release 11.1 Build 63.9."
     # try to convert it to something like "11.1(63.9)"
-
     # TODO
 
     if ($ver =~ /^.+\bNS(\d+\.\d+)/) {
@@ -206,9 +201,12 @@ sub os_ver {
 }
 
 sub mac {
+    # the address that made most sense to me to return was that of the management
+    # interface, since this is what's advertised via lldp. ofcourse the management
+    # interface is not at ifindex.1, so we'll use the lldp functions. lldp.pm has
+    # fancy ways to determine the remote id. netscaler gives us a preformatted
+    # string with it's mac. easy.
     my $ns  = shift;
-    # lldp.pm has fancy ways to determine this for remote id's. netscaler gives
-    # us a preformatted string with it's mac. easy.
 
     return $ns->lldpLocChassisId() || '';
 }
@@ -271,6 +269,8 @@ partition, either C<default> or C<management>.
 
 =over
 
+=item SNMP::Info::LLDP
+
 =item SNMP::Info::Layer7
 
 =back
@@ -282,6 +282,8 @@ partition, either C<default> or C<management>.
 =item F<NS-ROOT-MIB>
 
 =item Inherited Classes' MIBs
+
+See L<SNMP::Info::LLDP> for its own MIB requirements.
 
 See L<SNMP::Info::Layer7> for its own MIB requirements.
 
@@ -305,13 +307,15 @@ Returns 'netscaler'.
 
 Release extracted from C<sysBuildVersion>.
 
+=item $ns->mac()
+
+Returns the mac address of the management interface, taken via
+C<NS-ROOT-MIB::lldpLocChassisId>
+
 =item $ns->model()
 
-Model extracted from C<sysHardwareVersionDesc>.
-
-=item $ns->cpu()
-
-C<resCpuUsage>
+Pretty printed model extracted from C<sysHardwareVersionDesc>
+and C<sysModelId>, with fallback to just C<sysHardwareVersionDesc>.
 
 =item $ns->build_ver()
 
@@ -327,6 +331,10 @@ C<sysHardwareSerialNumber>
 
 =back
 
+=head2 Globals imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP> for details.
+
 =head2 Globals imported from SNMP::Info::Layer7
 
 See documentation in L<SNMP::Info::Layer7> for details.
@@ -340,13 +348,17 @@ to a hash.
 
 =item $ns->ip_index()
 
-C<ipAddr>
+C<NS-ROOT-MIB::ipAddr>
 
 =item $ns->ip_netmask()
 
-C<ipNetmask>
+C<NS-ROOT-MIB::ipNetmask>
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer7
 
