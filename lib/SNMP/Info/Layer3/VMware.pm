@@ -29,13 +29,18 @@
 
 package SNMP::Info::Layer3::VMware;
 
+# https://kb.vmware.com/s/article/2118059?lang=en_US
+#
+# vmware system mib obsolete https://docs.vmware.com/en/VMware-vSphere/7.0/com.vmware.vsphere.monitoring.doc/GUID-A7CB813A-EE36-4408-8935-A299C967AB15.html
+
 use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
+use SNMP::Info::IEEE802_Bridge;
 
-@SNMP::Info::Layer3::VMware::ISA       = qw/SNMP::Info::IEEE802dot3ad SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::VMware::ISA       = qw/SNMP::Info::IEEE802dot3ad SNMP::Info::Layer3 SNMP::Info::IEEE802_Bridge Exporter/;
 @SNMP::Info::Layer3::VMware::EXPORT_OK = qw/agg_ports/;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -45,12 +50,14 @@ $VERSION = '3.95';
 %MIBS = (
     %SNMP::Info::IEEE802dot3ad::MIBS,
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::IEEE802_Bridge::MIBS,
     'VMWARE-PRODUCTS-MIB' => 'vmwProducts',
     'VMWARE-SYSTEM-MIB'   => 'vmwProdName',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::IEEE802_Bridge::GLOBALS,
     # VMWARE-SYSTEM-MIB
     'vmwProdVersion'  => 'vmwProdVersion',
     'vmwProdBuild'    => 'vmwProdBuild',
@@ -62,12 +69,25 @@ $VERSION = '3.95';
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
+    %SNMP::Info::IEEE802_Bridge::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
+    %SNMP::Info::IEEE802_Bridge::MUNGE,
 );
+
+sub _at_pbb_one {
+    my $in = shift // {};
+    my $ret = {};
+    foreach my $key (keys %$in) {
+        if ($key =~ /^1\.(\d+)$/) {
+            $ret->{$1} = $in->{$key};
+        }
+    }
+    return $ret;
+}
 
 sub vendor {
     return 'vmware';
@@ -88,9 +108,39 @@ sub agg_ports {
    return agg_ports_lag(@_);
 }
 
-#sub layers {
-#    return '01001010';
-#}
+sub v_name {
+    my $cx = shift;
+    return _at_pbb_one($cx->iqb_v_name()) || $cx->SUPER::v_name();
+}
+sub qb_i_vlan {
+    my $cx = shift;
+    return _at_pbb_one($cx->iqb_i_vlan()) || $cx->SUPER::qb_i_vlan();
+}
+sub i_vlan_type {
+    my $cx = shift;
+    return _at_pbb_one($cx->iqb_i_vlan_type()) || $cx->SUPER::qb_i_vlan_type();
+}
+sub qb_v_egress {
+    my $cx = shift;
+    return $cx->iqb_v_egress() || $cx->SUPER::qb_v_egress();
+}
+sub qb_cv_egress {
+    my $cx = shift;
+    return $cx->iqb_cv_egress() || $cx->SUPER::qb_cv_egress();
+}
+sub qb_v_untagged {
+    my $cx = shift;
+    return $cx->iqb_v_untagged() || $cx->SUPER::qb_v_untagged();
+}
+sub qb_cv_untagged {
+    my $cx = shift;
+    return $cx->iqb_cv_untagged() || $cx->SUPER::qb_cv_untagged();
+}
+
+
+sub layers {
+    return '01001110';
+}
 
 1;
 __END__
